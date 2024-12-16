@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de Llamadas - Call Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Administración de Llamadas - Call Center</h1>
+
+    <div class="buttons">
+      <button id="importExcelBtn" class="btn">
+        <span class="icon">📥</span> Importar Excel
+      </button>
+      <button id="exportExcelBtn" class="btn">
+        <span class="icon">📤</span> Exportar Excel
+      </button>
+      <button id="startCallsBtn" class="btn">
+        <span class="icon">📞</span> Iniciar Llamadas
+      </button>
+      <button id="deleteCallsBtn" class="btn">
+        <span class="icon">🗑</span> Eliminar Datos
+      </button>
+      <button id="logoutBtn" class="btn">
+        <span class="icon">🔒</span> Cerrar Sesión
+      </button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <h2>Llamadas Pendientes</h2>
+        </div>
+        <div class="card-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Telefono</th>
+                <th>Razon</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="callsTableBody">
+              <!-- Las filas se generarán dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Estado de Llamadas</h2>
+        </div>
+        <div class="card-content" id="callStats">
+          <p>Total de llamadas: 0</p>
+          <p>Llamadas pendientes: 0</p>
+          <p>Llamadas contestadas: 0</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <form id="fileForm" method="post" action="/upload" enctype="multipart/form-data" style="display: none;">
+    <input type="file" id="fileInput" name="file" accept=".xlsx">
+  </form>
+  <div class="dialog-overlay" id="loginModal">
+    <div class="dialog-content">
+      <div class="dialog-title">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.656 0 3-1.343 3-3 0-1.656-1.344-3-3-3s-3 1.344-3 3c0 1.657 1.344 3 3 3zm0 4c-3.866 0-7 1.79-7 4v2h14v-2c0-2.21-3.134-4-7-4z" />
+        </svg>
+        Acceso Seguro
+      </div>
+      <div class="dialog-description">
+        Ingrese la clave de acceso para el Centro de Control de Llamadas
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="name">Nombre</label>
+          <input 
+            type="text" 
+            id="name" 
+            placeholder="Ingrese su nombre" 
+            required
+            style="margin-bottom: 15px;"
+          />
+          <label for="key">Clave de Acceso</label>
+          <input 
+            type="password" 
+            id="key" 
+            placeholder="Ingrese su clave" 
+            required
+          />
+        </div>
+        <div id="loginError" class="error-message">
+          <p>Nombre o clave incorrectos</p>
+        </div>
+        <button type="submit" class="submit-button">Ingresar</button>
+      </form>
+    </div>
+  </div>
+  <div class="dialog-overlay" id="callModal">
+    <div class="dialog-content">
+      <div class="dialog-title">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.656 0 3-1.343 3-3 0-1.656-1.344-3-3-3s-3 1.344-3 3c0 1.657 1.344 3 3 3zm0 4c-3.866 0-7 1.79-7 4v2h14v-2c0-2.21-3.134-4-7-4z" />
+        </svg>
+        Llamada entrante
+      </div>
+      <div class="dialog-description">
+        <p>Nombre: <span id="callName"></span></p>
+        <p>Cedula: <span id="callId"></span></p>
+        <p>Telefono: <span id="callPhone"></span></p>
+        <p>Razon: <span id="callReason"></span></p>
+      </div>
+    </div>
+  </div>
+  <div class="dialog-overlay" id="logoutModal">
+    <div class="dialog-content">
+      <div class="dialog-title">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.656 0 3-1.343 3-3 0-1.656-1.344-3-3-3s-3 1.344-3 3c0 1.657 1.344 3 3 3zm0 4c-3.866 0-7 1.79-7 4v2h14v-2c0-2.21-3.134-4-7-4z" />
+        </svg>
+        ¿Seguro que desea cerrar sesión?
+      </div>
+      <div class="dialog-description">
+        Al cerrar sesion no recibira llamadas entrantes
+        <button id="cancel" class="btn">Cancelar</button>
+        <button id="logoutAccepted" class="btn">Aceptar</button>
+      </div>
+    </div>
+  </div>
+  <div class="dialog-overlay" id="deleteModal">
+    <div class="dialog-content">
+      <div class="dialog-title">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.656 0 3-1.343 3-3 0-1.656-1.344-3-3-3s-3 1.344-3 3c0 1.657 1.344 3 3 3zm0 4c-3.866 0-7 1.79-7 4v2h14v-2c0-2.21-3.134-4-7-4z" />
+        </svg>
+        ¿Seguro que desea eliminar las llamadas?
+      </div>
+      <div class="dialog-description">
+        Este proceso es irreversible
+        <button id="cancelDelete" class="btn">Cancelar</button>
+        <button id="deleteAccepted" class="btn">Aceptar</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="{{ url_for('static', path="script.js") }}"></script>
+</body>
+</html>
