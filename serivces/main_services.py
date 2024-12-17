@@ -104,14 +104,14 @@ class MainService():
             advisor.in_call = True
             self.db.commit()
             self.resp = VoiceResponse()
-            self.resp.say("Conectando con un asesor. Por favor espere.", voice="Polly.Andres-Neural", language="es-MX")
+            self.resp.say(f"Hola {client.name}, somos de chupame la pija. Conectando con un asesor. Por favor espere.", voice="Polly.Andres-Neural", language="es-MX")
             self.resp.dial("+57" + advisor.phone_number, ringtone="mx", answer_on_bridge=True)
             self.resp.say("Adios", voice="Polly.Andres-Neural", language="es-MX")
             call = self.client_twilio.calls.create(
                 to="+57"+client.phone_number,
                 from_="+17753709884",
                 twiml=str(self.resp),
-                status_callback="https://85ae-186-180-21-42.ngrok-free.app/call-finished/",
+                status_callback="https://7c0a-181-51-213-228.ngrok-free.app/call-finished/",
                 status_callback_event=["answered", "completed"]
             )
             call_db = Call(ssid=call.sid, client_id=client.id, advisor_id=advisor.id)

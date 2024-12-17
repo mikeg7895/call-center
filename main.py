@@ -35,8 +35,3 @@ base_model.Base.metadata.create_all(bind=database.engine)
 app.include_router(main_controller.router)
 app.include_router(auth_controller.router)
 
-
-
-
-
-
