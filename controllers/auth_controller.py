@@ -1,21 +1,24 @@
-from fastapi import APIRouter, Response, Cookie
-from app.schemes.auth_schema import Login, Register
-from app.utils.factory import Factory
+from typing import Annotated
+from fastapi import APIRouter, Depends, Cookie, Response
+from fastapi.security import OAuth2PasswordRequestForm
+from app.schemes.auth_schema import Register, Token
+from app.services.auth_services import AuthService
+from datetime import timedelta
 
 router = APIRouter()
-auth_service = Factory().get_auth_service()
+ServiceAuth = Annotated[AuthService, Depends(AuthService)]
 
 @router.post("/login/")
-def login(login: Login, response: Response):
-    client = auth_service.login(login)
+def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], response: Response, auth_service: ServiceAuth):
+    client = auth_service.login(form_data)
     if not client:
         return {"error": "Invalid credentials"}
-    response.set_cookie(key="session_call", value=client.name)
-    return {"message": "Success"}
+    response.set_cookie(key="session_call", value=client.access_token)
+    return {"message": "Success", "token": Token(access_token=client.access_token, token_type="bearer")}
 
 
 @router.post("/register/")
-def register(register: Register):
+def register(register: Register, auth_service: ServiceAuth):
     is_registered = auth_service.register(register)
     if not is_registered:
         return {"error": "Error registering user"}
@@ -23,7 +26,7 @@ def register(register: Register):
 
 
 @router.post("/logout/")
-def logout(response: Response, session_call: str = Cookie(None)):
-    auth_service.logout(session_call)
+async def logout(response: Response, auth_service: ServiceAuth, session_call: str = Cookie(None)):
+    await auth_service.logout(session_call)
     response.delete_cookie(key="session_call")
     return {"message": "Success"}

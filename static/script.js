@@ -21,13 +21,13 @@ const cancelDelete = document.getElementById('cancelDelete');
 const deleteAccepted = document.getElementById('deleteAccepted');
 const exportBtn = document.getElementById('exportExcelBtn');
 
-function handleLogin(key, name) {
-  fetch("/login", {
+function handleLogin(formData) {
+  fetch("/login/", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: JSON.stringify({ "name": name, "password": key, "ip": "123.23.32" }),
+    body: formData.toString(),
   })
     .then((res) => res.json())
     .then((data) => {
@@ -37,7 +37,6 @@ function handleLogin(key, name) {
         err.style.display = 'block'
         return;
       }
-      console.log(data.data);
       loginModal.style.display = 'none';
       err.style.display = 'none';
       getClients();
@@ -52,7 +51,14 @@ loginForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = document.getElementById('name').value;
   const key = document.getElementById('key').value;
-  handleLogin(key, name);
+  const formData = new URLSearchParams();
+  formData.append('grant_type', 'password');
+  formData.append('username', name);
+  formData.append('password', key);
+  formData.append('scope', '');
+  formData.append('client_id', 'string');
+  formData.append('client_secret', 'string');
+  handleLogin(formData);
 });
 
 logoutBtn.addEventListener('click', () => {
@@ -180,7 +186,13 @@ function renderCalls(calls) {
 }
 
 function getClients(){
-  fetch("/clients")
+  fetch("/clients", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer`,
+    },
+  })
     .then((res) => res.json())
     .then((data) => {
       if(data.error) {
@@ -284,8 +296,7 @@ function createWebSocketConnection() {
     return;
   }
 
-  user = getCookie('session_call');
-  ws = new WebSocket("ws://localhost:8000/ws/?user=" + user);
+  ws = new WebSocket("ws://localhost:8000/ws/?token=" + getCookie('session_call'));
 
   ws.onopen = () => {
     console.log("Connected to the server");

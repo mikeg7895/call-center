@@ -73,20 +73,20 @@ class MainService():
         df.to_excel(buffer, "clients.xlsx", index=False, engine="openpyxl")
         buffer.seek(0)
         return buffer
-
-    def start_calls(self):
+    
+    def validate_process(self):
         process = self.db.query(ProcessInitiated).first()
         if not process:
-            process = ProcessInitiated(started=True)
+            process = ProcessInitiated(started=False)
             self.db.add(process)
             self.db.commit()
-            self.db.refresh(process)
         else:
             if process.started:
                 return {"error": "Ya se ha iniciado el proceso"}
-            process.started = True
-            self.db.commit()
 
+    def start_calls(self):
+        process = self.db.query(ProcessInitiated).first()
+        process.started = True
         clients = self.db.query(Client).all()
         for client in clients:
             while True:
